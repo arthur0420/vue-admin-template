@@ -5,7 +5,8 @@ import { resetRouter } from '@/router'
 const state = {
   token: getToken(),
   name: '',
-  avatar: ''
+  avatar: '',
+  role:''
 }
 
 const mutations = {
@@ -14,6 +15,9 @@ const mutations = {
   },
   SET_NAME: (state, name) => {
     state.name = name
+  },
+  SET_ROLE: (state, role) => {
+    state.role = role
   },
   SET_AVATAR: (state, avatar) => {
     state.avatar = avatar
@@ -26,10 +30,15 @@ const actions = {
     const { username, password } = userInfo
     return new Promise((resolve, reject) => {
       login({ username: username.trim(), password: password }).then(response => {
-        const { data } = response
-        commit('SET_TOKEN', data.token)
+        const data = response.data[0];
+        data.token = 'abdjdjeusjcjd';
+        commit('SET_TOKEN', data.token);
+        commit("SET_NAME",data.username);
+        commit("SET_ROLE",data.role);
+        let avatar = 'https://www.willsfintech.cn:9004/managerHead/20190124/2a4ef44864c241d6befaedf2c561b051.jpg';
+        commit("SET_AVATAR",avatar);
         setToken(data.token)
-        resolve()
+        resolve();
       }).catch(error => {
         reject(error)
       })
