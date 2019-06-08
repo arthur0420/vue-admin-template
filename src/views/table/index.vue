@@ -25,26 +25,52 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-dialog title="提示" :visible.sync="dialogVisible" width="80%">
+    <el-dialog title="添加动物"  :visible.sync="dialogVisible" width="350px">
       <el-form
         :model="ruleForm"
-        status-icon
+        :rules="rules"
         ref="ruleForm"
         label-width="100px"
         class="demo-ruleForm"
-      >
-        <el-form-item label="密码" prop="pass">
-          <el-input type="password" v-model="ruleForm.pass" autocomplete="off"></el-input>
+        size="mini">
+        <el-form-item   label="产线" prop="productLine" >
+            <el-select v-model="ruleForm.productLine" @change="showAp"  placeholder="选择产线" >
+              <el-option
+                v-for="item in plData"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+                >
+              </el-option>
+            </el-select>
         </el-form-item>
-        <el-form-item label="确认密码" prop="checkPass">
-          <el-input type="password" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
+        <el-form-item   label="产房" prop="apartmentId" > 
+          <el-select :disabled="showApFlag" v-model="ruleForm.apartmentId"  placeholder="选择产房" >
+              <el-option
+                v-for="item in apData"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
         </el-form-item>
-        <el-form-item label="年龄" prop="age">
-          <el-input v-model.number="ruleForm.age"></el-input>
+        <el-form-item   label="栏位序号" prop="noInApartment">
+          <el-input maxlength='5' type="text" v-model="ruleForm.noInApartment" ></el-input>
+        </el-form-item>
+         <el-form-item   label="受精日期" prop="eventDate">
+           <el-date-picker
+            type="date"
+            v-model="ruleForm.eventDate"
+            placeholder="选择日期"
+            :editable="false"
+            value-format="yyyy-MM-dd"
+            :picker-options="pickerOptions"
+            >
+          </el-date-picker>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
-          <el-button @click="resetForm('ruleForm')">重置</el-button>
+          <el-button type="primary" @click="submitForm()">提交</el-button>
+          <el-button @click="resetForm()">重置</el-button>
         </el-form-item>
       </el-form>
       <!-- <span slot="footer" class="dialog-footer">
@@ -67,16 +93,48 @@ export default {
       animalGross: 0,
       dialogVisible: false,
       ruleForm: {
-        pass: "",
-        checkPass: "",
-        age: ""
-      }
+        productLine: "",
+        apartmentId: '',
+        noInApartment: '',
+        eventDate:''
+      },
+      rules:{
+        productLine:[{required:true,message:"请选择产线", trigger: 'blur' }],
+        apartmentId:[{ required: true,message:"请选择产房", trigger: 'blur' }],
+        noInApartment:[{ required: true, message: '请输入栏位编号', trigger: 'blur' }],
+        eventDate:[{ required: true, message: '请选择产房', trigger: 'blur' }],
+      },
+      plData:[],
+      apData:[],
+      showApFlag:true,
+      pickerOptions: {
+        disabledDate(time) {
+          return time.getTime() > Date.now();
+        }
+      }   
     };
   },
   created() {
     this.getList();
   },
   methods: {
+    submitForm(){
+      this.$refs["ruleForm"].validate((valid) => {
+          if (valid) {
+            // TODO  提交
+          } else {
+            return false;
+          }
+        });
+    },
+    resetForm(){
+       this.$refs["ruleForm"].resetFields();
+    },
+    showAp(e){
+      var contain = this.contain(this.plData,e);
+      this.apData = contain.array;
+      this.showApFlag = false;
+    },
     showAdd() {
       this.dialogVisible = true;
     },
@@ -107,6 +165,47 @@ export default {
         this.animalGross = animalGross;
         // $("#animalGross").html(animalGross);
       });
+
+      rd = {
+        funcNo:'1002',
+		    dataType:"4dictionary"
+      };
+      post(rd).then(r =>{
+        var rdata = r.data;
+        var plData = new Array();
+        for(var i = 0 ; i <rdata.length; i++){
+          var one =  rdata[i];
+          
+          var isContain = this.contain(plData,one["pl_no"]);
+          if(isContain!=null){
+            var oneAp =	{
+                value:one["id"],
+                label:one["ap_name"]
+              }
+            isContain.array.push(oneAp);
+          }else{
+            var o = {
+              value:one["pl_no"],
+              label:one["pl_name"],
+              array:[{
+                value:one["id"],
+                label:one["ap_name"]
+              }]
+            }
+            plData.push(o);
+          }
+        }
+        this.plData = plData;
+      });
+    },
+    contain(a , plNo){
+      for(var i = 0 ; i< a.length ; i++){
+        var one = a[i];
+        if(one["value"] == plNo){
+          return one;
+        }
+      }
+      return null;
     }
   }
 };
